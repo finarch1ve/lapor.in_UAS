@@ -30,10 +30,33 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # Supabase
+  supabase_flutter: ^2.8.2
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Image Picker for file upload
   image_picker: ^1.1.2
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  # Network image caching
+  cached_network_image: ^3.4.1
+
+  # Secure storage
+  flutter_secure_storage: ^9.2.2
+
+  # Network connectivity
+  connectivity_plus: ^6.1.0
+
+  # Date formatting
+  intl: ^0.20.1
+
+  # HTTP requests (backup)
+  http: ^1.2.2
+
+  # Cupertino Icons
+  cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:

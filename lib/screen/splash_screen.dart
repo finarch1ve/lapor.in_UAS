@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ticketing_uts/providers/auth_provider.dart';
+import 'package:ticketing_uts/widgets/app_colors.dart';
+import 'package:ticketing_uts/widgets/unair_logo.dart';
 import 'login_screen.dart';
+import 'dashboard_screen.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   final VoidCallback onToggleTheme;
   final ThemeMode themeMode;
 
@@ -12,51 +17,71 @@ class SplashScreen extends StatefulWidget {
   });
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LoginScreen(
-            onToggleTheme: widget.onToggleTheme,
-            themeMode: widget.themeMode,
-          ),
-        ),
-      );
-    });
+    _checkAuthAndRedirect();
+  }
+
+  Future<void> _checkAuthAndRedirect() async {
+    // Wait for auth state to initialize
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    final authState = ref.read(authProvider);
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => authState.isAuthenticated
+            ? DashboardScreen(
+                onToggleTheme: widget.onToggleTheme,
+                themeMode: widget.themeMode,
+              )
+            : LoginScreen(
+                onToggleTheme: widget.onToggleTheme,
+                themeMode: widget.themeMode,
+              ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue,
+      backgroundColor: AppColors.primary,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.confirmation_number, size: 80, color: Colors.white),
-            const SizedBox(height: 20),
+            const UnairLogo(size: 100),
+            const SizedBox(height: 32),
             const Text(
-              'E-Ticketing Helpdesk',
+              'Lapor.in',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 10),
-            const Text(
+            const SizedBox(height: 8),
+            Text(
               'Universitas Airlangga',
-              style: TextStyle(color: Colors.white70, fontSize: 14),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 14,
+              ),
             ),
-            const SizedBox(height: 40),
-            const CircularProgressIndicator(color: Colors.white),
+            const SizedBox(height: 48),
+            const CircularProgressIndicator(
+              color: AppColors.accent,
+              strokeWidth: 3,
+            ),
           ],
         ),
       ),

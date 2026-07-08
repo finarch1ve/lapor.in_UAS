@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 class TicketData {
   static List<Map<String, dynamic>> tickets = [
     {

@@ -1,80 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ticketing_uts/providers/auth_provider.dart';
+import 'package:ticketing_uts/providers/ticket_provider.dart';
+import 'package:ticketing_uts/widgets/app_colors.dart';
+import 'package:ticketing_uts/widgets/app_card.dart';
 import 'ticket_tracking_screen.dart';
 
-class TicketHistoryScreen extends StatefulWidget {
+class TicketHistoryScreen extends ConsumerStatefulWidget {
   const TicketHistoryScreen({super.key});
 
   @override
-  State<TicketHistoryScreen> createState() => _TicketHistoryScreenState();
+  ConsumerState<TicketHistoryScreen> createState() => _TicketHistoryScreenState();
 }
 
-class _TicketHistoryScreenState extends State<TicketHistoryScreen>
+class _TicketHistoryScreenState extends ConsumerState<TicketHistoryScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  final List<Map<String, dynamic>> _allTickets = [
-    {
-      'id': '#001',
-      'title': 'Tidak bisa login sistem',
-      'status': 'Menunggu',
-      'date': '21 Apr 2026',
-      'category': 'Software',
-      'history': [
-        {'action': 'Tiket dibuat', 'time': '21 Apr 2026, 08:00', 'by': 'Kamu'},
-        {'action': 'Tiket diterima sistem', 'time': '21 Apr 2026, 08:01', 'by': 'Sistem'},
-      ],
-    },
-    {
-      'id': '#002',
-      'title': 'Printer rusak lantai 2',
-      'status': 'Diproses',
-      'date': '20 Apr 2026',
-      'category': 'Hardware',
-      'history': [
-        {'action': 'Tiket dibuat', 'time': '20 Apr 2026, 09:00', 'by': 'Kamu'},
-        {'action': 'Tiket diterima sistem', 'time': '20 Apr 2026, 09:01', 'by': 'Sistem'},
-        {'action': 'Tiket diassign ke Helpdesk', 'time': '20 Apr 2026, 10:00', 'by': 'Admin'},
-        {'action': 'Status diubah ke Diproses', 'time': '20 Apr 2026, 11:00', 'by': 'Helpdesk'},
-      ],
-    },
-    {
-      'id': '#003',
-      'title': 'Reset password email',
-      'status': 'Selesai',
-      'date': '19 Apr 2026',
-      'category': 'Software',
-      'history': [
-        {'action': 'Tiket dibuat', 'time': '19 Apr 2026, 07:00', 'by': 'Kamu'},
-        {'action': 'Tiket diterima sistem', 'time': '19 Apr 2026, 07:01', 'by': 'Sistem'},
-        {'action': 'Tiket diassign ke Helpdesk', 'time': '19 Apr 2026, 08:00', 'by': 'Admin'},
-        {'action': 'Status diubah ke Diproses', 'time': '19 Apr 2026, 09:00', 'by': 'Helpdesk'},
-        {'action': 'Tiket diselesaikan', 'time': '19 Apr 2026, 12:00', 'by': 'Helpdesk'},
-      ],
-    },
-    {
-      'id': '#004',
-      'title': 'Koneksi internet lambat',
-      'status': 'Menunggu',
-      'date': '18 Apr 2026',
-      'category': 'Network',
-      'history': [
-        {'action': 'Tiket dibuat', 'time': '18 Apr 2026, 14:00', 'by': 'Kamu'},
-        {'action': 'Tiket diterima sistem', 'time': '18 Apr 2026, 14:01', 'by': 'Sistem'},
-      ],
-    },
-    {
-      'id': '#005',
-      'title': 'Komputer tidak menyala',
-      'status': 'Diproses',
-      'date': '17 Apr 2026',
-      'category': 'Hardware',
-      'history': [
-        {'action': 'Tiket dibuat', 'time': '17 Apr 2026, 10:00', 'by': 'Kamu'},
-        {'action': 'Tiket diterima sistem', 'time': '17 Apr 2026, 10:01', 'by': 'Sistem'},
-        {'action': 'Tiket diassign ke Helpdesk', 'time': '17 Apr 2026, 11:00', 'by': 'Admin'},
-      ],
-    },
-  ];
 
   @override
   void initState() {
@@ -88,25 +29,48 @@ class _TicketHistoryScreenState extends State<TicketHistoryScreen>
     super.dispose();
   }
 
-  List<Map<String, dynamic>> _filtered(String status) =>
-      status == 'Semua' ? _allTickets : _allTickets.where((t) => t['status'] == status).toList();
+  List<dynamic> _filtered(String status, dynamic ticketState, dynamic user) {
+    final tickets = user?.isAdmin == true
+        ? ticketState.tickets
+        : user?.isHelpdesk == true
+            ? ticketState.assignedTickets
+            : ticketState.myTickets;
 
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'Menunggu': return Colors.orange;
-      case 'Diproses': return Colors.purple;
-      case 'Selesai': return Colors.green;
-      default: return Colors.grey;
+    if (status == 'Semua') {
+      return tickets;
     }
+    if (status == 'Aktif') {
+      return tickets.where((t) => t.status != 'Selesai').toList();
+    }
+    return tickets.where((t) => t.status == status).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final ticketState = ref.watch(ticketProvider);
+    final user = ref.watch(currentUserProvider);
+    final theme = Theme.of(context);
+    final primary = theme.primaryColor;
+    final textSecondary = theme.textTheme.bodySmall?.color;
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Riwayat Tiket'),
+        centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: primary,
+          labelColor: primary,
+          unselectedLabelColor: textSecondary,
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
           tabs: const [
             Tab(text: 'Semua'),
             Tab(text: 'Aktif'),
@@ -117,58 +81,100 @@ class _TicketHistoryScreenState extends State<TicketHistoryScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildList('Semua'),
-          _buildList('Diproses'),
-          _buildList('Selesai'),
+          _buildTab('Semua', ticketState, user, theme),
+          _buildTab('Aktif', ticketState, user, theme),
+          _buildTab('Selesai', ticketState, user, theme),
         ],
       ),
     );
   }
 
-  Widget _buildList(String filter) {
-    final list = _filtered(filter);
-    if (list.isEmpty) {
-      return const Center(
+  Widget _buildTab(String status, dynamic ticketState, dynamic user, ThemeData theme) {
+    final tickets = _filtered(status, ticketState, user);
+    final textPrimary = theme.textTheme.bodyLarge?.color;
+    final textSecondary = theme.textTheme.bodySmall?.color;
+
+    if (tickets.isEmpty) {
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox, size: 60, color: Colors.grey),
-            SizedBox(height: 12),
-            Text('Tidak ada tiket', style: TextStyle(color: Colors.grey)),
+            Icon(Icons.inbox, size: 60, color: textSecondary?.withValues(alpha: 0.5)),
+            const SizedBox(height: 12),
+            Text(
+              'Tidak ada tiket ${status == "Semua" ? "" : status}',
+              style: TextStyle(color: textSecondary, fontSize: 14),
+            ),
           ],
         ),
       );
     }
+
     return ListView.builder(
-      padding: const EdgeInsets.all(12),
-      itemCount: list.length,
+      padding: const EdgeInsets.all(16),
+      itemCount: tickets.length,
       itemBuilder: (context, i) {
-        final t = list[i];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 10),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: _statusColor(t['status']).withOpacity(0.15),
-              child: Icon(Icons.confirmation_number, color: _statusColor(t['status'])),
-            ),
-            title: Text(t['title'], style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('${t['id']} • ${t['category']} • ${t['date']}'),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+        final t = tickets[i];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: AppCard(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TicketTrackingScreen(ticketId: t.id),
+                ),
+              );
+            },
+            padding: EdgeInsets.zero,
+            child: Row(
               children: [
-                Chip(
-                  label: Text(t['status'],
-                      style: const TextStyle(fontSize: 10, color: Colors.white)),
-                  backgroundColor: _statusColor(t['status']),
-                  padding: EdgeInsets.zero,
+                // Status indicator
+                Container(
+                  width: 4,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: AppColors.getStatusColor(t.status ?? 'Menunggu'),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t.title ?? 'Tanpa judul',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${t.displayId ?? t.id ?? "#???"} • ${t.category ?? "Lainnya"} • ${t.formattedDate ?? ""}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Icon(
+                    Icons.chevron_right,
+                    color: textSecondary,
+                  ),
                 ),
               ],
-            ),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => TicketTrackingScreen(ticket: t),
-              ),
             ),
           ),
         );
